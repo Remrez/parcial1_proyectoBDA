@@ -1,31 +1,14 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import oracledb
-import os
+# --- 1. Importamos las funciones de nuestro nuevo módulo db ---
+from db import get_db_connection, pool
 
 app = Flask(__name__)
 CORS(app)
 
-# --- Configuración del Pool de Conexiones ---
-try:
-    pool = oracledb.create_pool(
-        user="blog", password="blog", dsn="localhost:1521/xepdb1",
-        min=2, max=5, increment=1
-    )
-    print("Pool de conexiones creado exitosamente.")
-except oracledb.Error as e:
-    print(f"Error al crear el pool de conexiones: {e}")
-    pool = None
-
-def get_db_connection():
-    if not pool: return None
-    try:
-        return pool.acquire()
-    except oracledb.Error as e:
-        print(f"Error al obtener conexión del pool: {e}")
-        return None
-
 # --- Endpoints para Usuarios ---
+# La lógica de los endpoints no cambia, solo que ahora dependen de "db.py"
 @app.route('/api/usuarios', methods=['GET'])
 def get_usuarios():
     conn = get_db_connection()
@@ -114,6 +97,10 @@ def get_articulos():
     finally:
         if conn: pool.release(conn)
 
+# ... (Aquí irían todos los demás endpoints de Artículos, Categorías, Comentarios y Tags,
+#      que se quedan exactamente igual que en el archivo anterior) ...
+
+# --- (Resto de tus endpoints completos) ---
 @app.route('/api/articulos', methods=['POST'])
 def create_articulo():
     data = request.json
@@ -365,4 +352,5 @@ def delete_tag(tag_name):
         if conn: pool.release(conn)
 
 if __name__ == '__main__':
+    # 2. El servidor ahora se corre desde app.py
     app.run(debug=True, port=5000)
