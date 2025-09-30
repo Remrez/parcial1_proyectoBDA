@@ -1,9 +1,24 @@
-import cx_Oracle
+import oracledb
 
 try:
-    conn = cx_Oracle.connect("blog", "blog", "localhost:1521/xepdb1")
+    # Conexión explícita con parámetros
+    conn = oracledb.connect(
+        user="proyectos",
+        password="proyectos",
+        dsn="localhost:1521/xepdb1"
+    )
+    print("Conexión exitosa a Oracle Database")
+
+    # Crear cursor
+    cur = conn.cursor()
+
+    # Ejemplo: consulta rápida
+    cur.execute("SELECT 'Conexión lista' FROM dual")
+    result = cur.fetchone()
+    print("Resultado:", result[0])
+
 except Exception as err:
-    print('excepcion ocurrida durante la conexion', err)
+    print('excepcion ocurrida durante la conexion: ', err)
 else:
     try:
         cur = conn.cursor()
