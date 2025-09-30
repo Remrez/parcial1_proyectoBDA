@@ -29,7 +29,7 @@ CREATE TABLE ARTICULOS(
   fecha_publicacion DATE DEFAULT SYSDATE, 
   article_text      CLOB         CONSTRAINT a_text_nn NOT NULL,
   
-  CONSTRAINT art_user_id_fk FOREIGN KEY (user_id) REFERENCES usuarios(user_id)
+  CONSTRAINT art_user_id_fk FOREIGN KEY (user_id) REFERENCES usuarios(user_id) ON DELETE CASCADE
 );
 
 
@@ -41,8 +41,8 @@ CREATE TABLE COMENTARIOS(
   texto_com       CLOB          CONSTRAINT co_texto_nn NOT NULL,
   --url_profile     VARCHAR2(100) CONSTRAINT co_url_nn NOT NULL,
 
-  CONSTRAINT co_articulo_id_fk FOREIGN KEY (articulo_id) REFERENCES articulos(articulo_id),
-  CONSTRAINT co_user_id_fk FOREIGN KEY (user_id) REFERENCES usuarios(user_id)
+  CONSTRAINT co_articulo_id_fk FOREIGN KEY (articulo_id) REFERENCES articulos(articulo_id) ON DELETE CASCADE,
+  CONSTRAINT co_user_id_fk FOREIGN KEY (user_id) REFERENCES usuarios(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE TAGS(
