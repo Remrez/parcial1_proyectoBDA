@@ -1,144 +1,368 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import oracledb
+import os
 
+app = Flask(__name__)
+CORS(app)
+
+# --- Configuración del Pool de Conexiones ---
 try:
-    # Conexión explícita con parámetros
-    conn = oracledb.connect(
-        user="proyectos",
-        password="proyectos",
-        dsn="localhost:1521/xepdb1"
+    pool = oracledb.create_pool(
+        user="blog", password="blog", dsn="localhost:1521/xepdb1",
+        min=2, max=5, increment=1
     )
-    print("Conexión exitosa a Oracle Database")
+    print("Pool de conexiones creado exitosamente.")
+except oracledb.Error as e:
+    print(f"Error al crear el pool de conexiones: {e}")
+    pool = None
 
-    # Crear cursor
-    cur = conn.cursor()
-
-    # Ejemplo: consulta rápida
-    cur.execute("SELECT 'Conexión lista' FROM dual")
-    result = cur.fetchone()
-    print("Resultado:", result[0])
-
-except Exception as err:
-    print('excepcion ocurrida durante la conexion: ', err)
-else:
+def get_db_connection():
+    if not pool: return None
     try:
-        cur = conn.cursor()
-        usuarios = [
-                ('Carlos Mendoza', 'carlos.mendoza@example.com'),
-                ('María López', 'maria.lopez@example.com'),
-                ('Juan Pérez', 'juan.perez@example.com'),
-                ('Ana Castillo', 'ana.castillo@example.com'),
-                ('Luis Hernández', 'luis.hernandez@example.com'),
-                ('Paola Ramírez', 'paola.ramirez@example.com'),
-                ('Andrés Torres', 'andres.torres@example.com'),
-                ('Sofía Navarro', 'sofia.navarro@example.com'),
-                ('Ricardo Gutiérrez', 'ricardo.gutierrez@example.com'),
-                ('Elena Vargas', 'elena.vargas@example.com')
-            ]
-        
-        tags = [
-            ('tecnologia', 'www.blogtech.com/tecnologia'),
-            ('ciberseguridad', 'www.seguridadonline.com/articulos'),
-            ('programacion', 'www.devworld.com/tutoriales'),
-            ('futbol', 'www.deportes.com/futbol'),
-            ('videojuegos', 'www.gamershub.com/news'),
-            ('educacion', 'www.educacionhoy.com/cursos'),
-            ('noticias', 'www.mundonoticias.com/ultimas'),
-            ('cocina', 'www.recetasychef.com/blog'),
-            ('viajes', 'www.viajerosglobal.com/guias'),
-            ('economia', 'www.finanzasfacil.com/reportes')
-        ]
+        return pool.acquire()
+    except oracledb.Error as e:
+        print(f"Error al obtener conexión del pool: {e}")
+        return None
 
-        categoria = [
-            ('Tecnología', 'www.tecnologia.com'),
-            ('Ciberseguridad', 'www.ciberseguridad.com'),
-            ('Programación', 'www.programacion.com'),
-            ('Ciencia', 'www.ciencia.com'),
-            ('Videojuegos', 'www.videojuegos.com'),
-            ('Educación', 'www.educacion.com'),
-            ('Salud', 'www.salud.com'),
-            ('Finanzas', 'www.finanzas.com'),
-            ('Deportes', 'www.deportes.com'),
-            ('Cocina', 'www.cocina.com')
-        ]
-
-        articulo = [
-            (1, 'Introducción a la Programación en Python', 'En este artículo aprenderás las bases de Python, desde variables hasta estructuras de control.'),
-            (2, 'Conceptos Básicos de Ciberseguridad', 'Exploramos los principios fundamentales para proteger tus sistemas y datos.'),
-            (3, 'Guía de Diseño de Bases de Datos Relacionales', 'Te mostramos cómo modelar y estructurar correctamente tus datos.'),
-            (4, 'Patrones de Diseño en el Desarrollo de Software', 'Un recorrido por los patrones más utilizados y sus casos de uso.'),
-            (5, 'Introducción al Aprendizaje Automático', 'Descubre qué es el machine learning y cómo se aplica en la industria.'),
-            (6, 'Seguridad en Redes: Buenas Prácticas', 'Aprende cómo proteger tu red con estrategias modernas de seguridad.'),
-            (7, 'Optimización de Consultas SQL', 'Consejos para mejorar el rendimiento de tus bases de datos.'),
-            (8, 'Inteligencia Artificial en Videojuegos', 'Exploramos cómo la IA mejora la experiencia de juego.'),
-            (9, 'Guía Completa sobre APIs REST', 'Aprende a diseñar, implementar y consumir APIs de forma eficiente.'),
-            (10, 'Introducción a Docker y Contenedores', 'Una guía básica para comenzar a trabajar con contenedores en entornos de desarrollo.')
-        ]
-
-        comentario = [
-            (1, 5, 'Muy interesante el artículo, me ayudó a entender mejor el tema.'),
-            (2, 3, 'Creo que podrías profundizar más en la parte de seguridad, pero en general está bien explicado.'),
-            (3, 7, 'Excelente explicación, fue fácil de seguir y muy útil para principiantes.'),
-            (4, 2, 'No había considerado ese enfoque, gracias por compartirlo.'),
-            (5, 8, 'Estoy de acuerdo con tus conclusiones, aportan una perspectiva clara sobre el tema.'),
-            (6, 1, 'La parte final del artículo me pareció especialmente útil para mi proyecto.'),
-            (7, 4, 'Buen trabajo, aunque creo que podrías incluir algunos ejemplos más técnicos.'),
-            (8, 6, 'Me gustó mucho la forma en que estructuraste el contenido, fue muy fácil de entender.'),
-            (9, 10, 'Definitivamente este artículo aclara muchas dudas que tenía, gracias.'),
-            (10, 9, 'Una lectura muy interesante, espero que sigas publicando artículos similares.'),
-            (1, 2, 'Me encantó cómo abordaste el tema desde diferentes perspectivas.'),
-            (2, 4, 'La explicación fue clara y directa, justo lo que necesitaba.'),
-            (3, 5, 'Podrías agregar algunas referencias externas para complementar la información.'),
-            (4, 6, 'Gracias por compartir, me resultó muy útil para mi trabajo universitario.'),
-            (5, 7, 'Creo que podrías mejorar la redacción en algunas partes, pero el contenido es bueno.'),
-            (6, 8, 'Muy buen artículo, se nota el esfuerzo en la investigación.'),
-            (7, 9, 'No estaba familiarizado con este tema y ahora tengo una mejor comprensión.'),
-            (8, 10, 'Interesante punto de vista, aunque difiero en algunos aspectos.'),
-            (9, 1, 'Gracias por compartir esta información, la pondré en práctica.'),
-            (10, 3, 'La sección de ejemplos fue mi parte favorita, muy bien explicada.'),
-            (1, 6, 'Excelente contenido, ojalá publiques más artículos como este.'),
-            (2, 7, 'Considero que podrías incluir gráficos o diagramas para facilitar la comprensión.'),
-            (3, 8, 'Me pareció muy interesante la conclusión, muy bien argumentada.'),
-            (4, 9, 'Aunque es un tema complejo, lograste explicarlo de forma sencilla.'),
-            (5, 10, 'Este artículo responde muchas de las preguntas que tenía, gracias.'),
-            (6, 2, 'La información es actual y relevante, muy buen trabajo.'),
-            (7, 3, 'Tal vez podrías agregar más casos prácticos, pero en general es excelente.'),
-            (8, 4, 'Me gustó la estructura del artículo, todo está bien organizado.'),
-            (9, 5, 'Nunca había leído algo tan completo sobre el tema, felicidades.'),
-            (10, 8, 'Muy informativo, definitivamente lo recomendaré a mis compañeros.')
-        ]
-
-        for nombre, correo in usuarios:
-            cur.callproc('INSERT_USUARIO', (nombre, correo))
-
-        for tag, url in tags:
-            cur.callproc('INSERT_TAG', (tag, url))
-
-        for cat, url in categoria:
-            cur.callproc('INSERT_CATEGORIA', (cat, url))
-
-        for IdUsr, NomArt, descripcion in articulo:
-            cur.callproc('INSERT_ARTICULO', (IdUsr, NomArt, descripcion))
-    
-        for artId, usId, texto in comentario:
-            cur.callproc('INSERT_COMENTARIO', (artId, usId, texto))
-
-        #cur.callproc('INSERT_USUARIO','pepitas', 'hola@gmail.com'))
-        #cur.callproc('UPDATE_USUARIO',('hola@gmail.com','peps', 'hElOO@gmail.com', 1, 1))
-        #cur.callproc('DELETE_USUARIO',['hElOO@gmail.com'])
-        #cur.callproc('INSERT_TAG',('reglas', 'www.futbol/reglas.com'))
-        #cur.callproc('UPDATE_TAG',('reglas', 'rules'))
-        #cur.callproc('DELETE_TAG',['rules'])
-        #cur.callproc('INSERT_ARTICULO',(6, 'Introducción a las Bases de Datos Oracle', 'En este artículo exploraremos los conceptos básicos...'))
-        #cur.callproc('UPDATE_ARTICULO',(1, 'Introducción', 'En este artículo exploraremos...', 1, 1))
-        #cur.callproc('DELETE_ARTICULOS',[1])
-        #cur.callproc('INSERT_CATEGORIA',('Futbol', 'www.futbol.com'))
-        #cur.callproc('UPDATE_CATEGORIA',('Futbol', 'fusho'))
-        #cur.callproc('DELETE_CATEGORIA',['fusho'])
-    except Exception as err:
-        print('error en la insercion', err)
-    else:
-        print('Procedimiento ejecutado')
+# --- Endpoints para Usuarios ---
+@app.route('/api/usuarios', methods=['GET'])
+def get_usuarios():
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT user_id, user_name, email FROM usuarios")
+            rows = cur.fetchall()
+            return jsonify([{'user_id': r[0], 'user_name': r[1], 'email': r[2]} for r in rows])
+    except oracledb.Error as e:
+        return jsonify({"error": str(e)}), 500
     finally:
-        cur.close()
-# finally: 
-#     conn.close()
+        if conn: pool.release(conn)
+
+@app.route('/api/usuarios', methods=['POST'])
+def create_usuario():
+    data = request.json
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('INSERT_USUARIO', [data['user_name'], data['email']])
+            conn.commit()
+            return jsonify({"message": "Usuario creado correctamente"}), 201
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/usuarios/<email>', methods=['PUT'])
+def update_usuario(email):
+    data = request.json
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('UPDATE_USUARIO', [email, data['user_name'], data['email'], data.get('name_bool', 1), data.get('email_bool', 1)])
+            conn.commit()
+            return jsonify({"message": "Usuario actualizado correctamente"})
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/usuarios/<email>', methods=['DELETE'])
+def delete_usuario(email):
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('DELETE_USUARIO', [email])
+            conn.commit()
+            return jsonify({"message": "Usuario eliminado correctamente"})
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+# --- Endpoints para Artículos ---
+@app.route('/api/articulos', methods=['GET'])
+def get_articulos():
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT a.articulo_id, a.user_id, a.titulo, a.article_text, u.user_name
+                FROM articulos a
+                JOIN usuarios u ON a.user_id = u.user_id
+            """)
+            rows = cur.fetchall()
+            articulos = []
+            for row in rows:
+                article_text_lob = row[3]
+                article_text_str = article_text_lob.read() if article_text_lob else ""
+                articulos.append({
+                    'articulo_id': row[0], 'user_id': row[1], 'titulo': row[2],
+                    'article_text': article_text_str, 'user_name': row[4]
+                })
+            return jsonify(articulos)
+    except oracledb.Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/articulos', methods=['POST'])
+def create_articulo():
+    data = request.json
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('INSERT_ARTICULO', [data['user_id'], data['titulo'], data['article_text']])
+            conn.commit()
+            return jsonify({"message": "Artículo creado correctamente"}), 201
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/articulos/<int:articulo_id>', methods=['PUT'])
+def update_articulo(articulo_id):
+    data = request.json
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('UPDATE_ARTICULO', [
+                articulo_id, data['titulo'], data['article_text'],
+                data.get('titulo_bool', 1), data.get('text_bool', 1)
+            ])
+            conn.commit()
+            return jsonify({"message": "Artículo actualizado correctamente"})
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/articulos/<int:articulo_id>', methods=['DELETE'])
+def delete_articulo(articulo_id):
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('DELETE_ARTICULOS', [articulo_id])
+            conn.commit()
+            return jsonify({"message": "Artículo eliminado correctamente"})
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+# --- Endpoints para Categorías ---
+@app.route('/api/categorias', methods=['GET'])
+def get_categorias():
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT category_name, url_cat FROM categorias")
+            rows = cur.fetchall()
+            return jsonify([{'category_name': r[0], 'url_cat': r[1]} for r in rows])
+    except oracledb.Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/categorias', methods=['POST'])
+def create_categoria():
+    data = request.json
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('INSERT_CATEGORIA', [data['category_name'], data['url_cat']])
+            conn.commit()
+            return jsonify({"message": "Categoría creada correctamente"}), 201
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/categorias/<category_name>', methods=['PUT'])
+def update_categoria(category_name):
+    data = request.json
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('UPDATE_CATEGORIA', [category_name, data['category_name']])
+            conn.commit()
+            return jsonify({"message": "Categoría actualizada correctamente"})
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/categorias/<category_name>', methods=['DELETE'])
+def delete_categoria(category_name):
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('DELETE_CATEGORIA', [category_name])
+            conn.commit()
+            return jsonify({"message": "Categoría eliminada correctamente"})
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+# --- Endpoints para Comentarios ---
+@app.route('/api/comentarios', methods=['GET'])
+def get_comentarios():
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT c.comentario_id, c.articulo_id, c.user_id, c.texto_com,
+                       a.titulo, u.user_name
+                FROM comentarios c
+                JOIN articulos a ON c.articulo_id = a.articulo_id
+                JOIN usuarios u ON c.user_id = u.user_id
+            """)
+            rows = cur.fetchall()
+            comentarios = []
+            for row in rows:
+                texto_com_lob = row[3]
+                texto_com_str = texto_com_lob.read() if texto_com_lob else ""
+                comentarios.append({
+                    'comentario_id': row[0], 'articulo_id': row[1], 'user_id': row[2],
+                    'texto_com': texto_com_str, 'titulo_articulo': row[4], 'user_name': row[5]
+                })
+            return jsonify(comentarios)
+    except oracledb.Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/comentarios', methods=['POST'])
+def create_comentario():
+    data = request.json
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('INSERT_COMENTARIO', [data['articulo_id'], data['user_id'], data['texto_com']])
+            conn.commit()
+            return jsonify({"message": "Comentario creado correctamente"}), 201
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/comentarios/<int:comentario_id>', methods=['PUT'])
+def update_comentario(comentario_id):
+    data = request.json
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('UPDATE_COMENTARIO', [comentario_id, data['texto_com']])
+            conn.commit()
+            return jsonify({"message": "Comentario actualizado correctamente"})
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/comentarios/<int:comentario_id>', methods=['DELETE'])
+def delete_comentario(comentario_id):
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('DELETE_COMENTARIO', [comentario_id])
+            conn.commit()
+            return jsonify({"message": "Comentario eliminado correctamente"})
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+# --- Endpoints para Tags ---
+@app.route('/api/tags', methods=['GET'])
+def get_tags():
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT tag_name, url_tag FROM tags")
+            rows = cur.fetchall()
+            return jsonify([{'tag_name': r[0], 'url_tag': r[1]} for r in rows])
+    except oracledb.Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/tags', methods=['POST'])
+def create_tag():
+    data = request.json
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('INSERT_TAG', [data['tag_name'], data['url_tag']])
+            conn.commit()
+            return jsonify({"message": "Tag creado correctamente"}), 201
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/tags/<tag_name>', methods=['PUT'])
+def update_tag(tag_name):
+    data = request.json
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('UPDATE_TAG', [tag_name, data['tag_name']])
+            conn.commit()
+            return jsonify({"message": "Tag actualizado correctamente"})
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+@app.route('/api/tags/<tag_name>', methods=['DELETE'])
+def delete_tag(tag_name):
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            cur.callproc('DELETE_TAG', [tag_name])
+            conn.commit()
+            return jsonify({"message": "Tag eliminado correctamente"})
+    except oracledb.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
