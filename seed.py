@@ -104,8 +104,8 @@ def seed_data(cur):
 if __name__ == "__main__":
     try:
         conn = oracledb.connect(
-            user="blog",
-            password="blog",
+            user="proyectos",
+            password="proyectos",
             dsn="localhost:1521/xepdb1"
         )
         print("\nConexión a la BD exitosa para carga de datos.")
