@@ -1,33 +1,35 @@
 CREATE OR REPLACE PROCEDURE insert_categoria(
-    categoria_id categorias.categoria_id%TYPE,
     category_name categorias.category_name%TYPE,
     url_cat categorias.url_cat%TYPE
 )
 IS
     opSql VARCHAR(255);
 BEGIN
-    opSql := 'INSERT INTO categorias VALUES :categoria_id, :category_name, :url_cat';
-    EXECUTE IMMEDIATE opSql USING categoria_id, category_name, url_cat;
+    opSql := 'INSERT INTO categorias(category_name, url_cat) VALUES (:category_name, :url_cat)';
+    EXECUTE IMMEDIATE opSql USING category_name, url_cat;
+    COMMIT;
 END;
 
 -- Sólo se permite cambiar el nombre de la categoria.
 CREATE OR REPLACE PROCEDURE update_categoria(
-    categoria_id categorias.categoria_id%TYPE,
+    or_category_name categorias.category_name%TYPE,
     category_name categorias.category_name%TYPE
 )
 IS
     opSql VARCHAR(255);
 BEGIN
-    opSql := 'UPDATE categorias SET category_name = :category_name WHERE categoria_id = :categoria_id';
-    EXECUTE IMMEDIATE opSql USING categoria_id, category_name;
+    opSql := 'UPDATE categorias SET category_name = :category_name WHERE category_name = :or_categoria_name';
+    EXECUTE IMMEDIATE opSql USING category_name, or_category_name;
+    COMMIT;
 END;
 
 CREATE OR REPLACE PROCEDURE delete_categoria(
-    categoria_id categorias.categoria_id%TYPE
+    category_name categorias.category_name%TYPE
 )
 IS
     opSql VARCHAR(255);
 BEGIN
-    opSql := 'DELETE FROM categorias WHERE categoria_id = :categoria_id';
-    EXECUTE IMMEDIATE opSql USING categoria_id;
+    opSql := 'DELETE FROM categorias WHERE category_name = :categoria_name';
+    EXECUTE IMMEDIATE opSql USING category_name;
+    COMMIT;
 END;

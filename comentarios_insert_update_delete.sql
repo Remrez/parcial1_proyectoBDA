@@ -1,5 +1,4 @@
 CREATE OR REPLACE PROCEDURE insert_comentario(
-    comentario_id comentarios.comentario_id%TYPE,
     articulo_id comentarios.articulo_id%TYPE,
     user_id comentarios.user_id%TYPE,
     texto_com comentarios.texto_com%TYPE
@@ -7,8 +6,9 @@ CREATE OR REPLACE PROCEDURE insert_comentario(
 IS
     opSql VARCHAR(255);
 BEGIN
-    opSql := 'INSERT INTO comentarios VALUES :comentario_id, :articulo_id, :user_id, :texto_com';
-    EXECUTE IMMEDIATE opSql USING comentario_id, articulo_id, user_id, texto_com;
+    opSql := 'INSERT INTO comentarios VALUES (:articulo_id, :user_id, :texto_com)';
+    EXECUTE IMMEDIATE opSql USING articulo_id, user_id, texto_com;
+    COMMIT;
 END;
 
 -- Sólo se permite cambiar el texto del comentario.
@@ -21,6 +21,7 @@ IS
 BEGIN
     opSql := 'UPDATE comentarios SET texto_com = :texto_com WHERE comentario_id = :comentario_id';
     EXECUTE IMMEDIATE opSql USING texto_com, comentario_id;
+    COMMIT;
 END;
 
 CREATE OR REPLACE PROCEDURE delete_comentario(
@@ -31,4 +32,5 @@ IS
 BEGIN
     opSql := 'DELETE FROM comentarios WHERE comentario_id = :comentario_id';
     EXECUTE IMMEDIATE opSql USING comentario_id;
+    COMMIT;
 END;

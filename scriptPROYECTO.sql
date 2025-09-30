@@ -13,6 +13,9 @@ CREATE TABLE USUARIOS(
   email         VARCHAR2(100) CONSTRAINT email_nn NOT NULL
 );
 
+ALTER TABLE USUARIOS 
+ADD CONSTRAINT email_un UNIQUE(email);
+
 CREATE TABLE ARTICULOS(
   articulo_id       NUMBER       CONSTRAINT artiuclo_id_pk PRIMARY KEY,
   user_id           NUMBER       CONSTRAINT a_user_id_nn NOT NULL,--FK
@@ -22,6 +25,8 @@ CREATE TABLE ARTICULOS(
   
   CONSTRAINT art_user_id_fk FOREIGN KEY (user_id) REFERENCES usuarios(user_id)
 );
+
+
 
 CREATE TABLE COMENTARIOS(
   comentario_id   NUMBER        CONSTRAINT comentario_id_pk PRIMARY KEY,
@@ -40,11 +45,17 @@ CREATE TABLE TAGS(
   url_tag      VARCHAR2(100) CONSTRAINT t_url_nn NOT NULL
 );
 
+ALTER TABLE TAGS
+ADD CONSTRAINT tag_nm_un UNIQUE(tag_name);
+
 CREATE TABLE CATEGORIAS(
   categoria_id      NUMBER        CONSTRAINT category_id_pk PRIMARY KEY,
   category_name     VARCHAR2(50)  CONSTRAINT ca_name_nn NOT NULL,
   url_cat           VARCHAR2(100) CONSTRAINT ca_url_nn NOT NULL
 );
+
+ALTER TABLE CATEGORIAS
+ADD CONSTRAINT categoria_nm_un UNIQUE(category_name);
 
 CREATE TABLE ARTICULO_TAGS(
   articulo_id    NUMBER CONSTRAINT artag_art_id_nn NOT NULL,
@@ -64,3 +75,38 @@ CREATE TABLE ARTICULO_CATEGORIAS(
   CONSTRAINT artcat_categoria_id_fk FOREIGN KEY (categoria_id) REFERENCES categorias(categoria_id)
 );
 
+CREATE SEQUENCE usuarios_seq
+  START WITH 1
+  INCREMENT BY 1
+  NOCACHE;
+
+CREATE SEQUENCE articulos_seq
+  START WITH 1
+  INCREMENT BY 1
+  NOCACHE;
+
+CREATE SEQUENCE comentarios_seq
+  START WITH 1
+  INCREMENT BY 1
+  NOCACHE;
+
+CREATE SEQUENCE tags_seq
+  START WITH 1
+  INCREMENT BY 1
+  NOCACHE;
+
+CREATE SEQUENCE categorias_seq
+  START WITH 1
+  INCREMENT BY 1
+  NOCACHE;
+
+ALTER TABLE usuarios
+MODIFY user_id DEFAULT usuarios_seq.NEXTVAL;
+ALTER TABLE articulos
+MODIFY articulo_id DEFAULT articulos_seq.NEXTVAL;
+ALTER TABLE comentarios
+MODIFY comentario_id DEFAULT comentarios_seq.NEXTVAL;
+ALTER TABLE tags
+MODIFY tag_id DEFAULT tags_seq.NEXTVAL;
+ALTER TABLE categorias
+MODIFY categoria_id DEFAULT categorias_seq.NEXTVAL;
