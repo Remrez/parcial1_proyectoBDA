@@ -1,118 +1,70 @@
-DROP TABLE ARTICULO_CATEGORIAS CASCADE CONSTRAINTS;
-DROP TABLE ARTICULO_TAGS CASCADE CONSTRAINTS;
-DROP TABLE COMENTARIOS CASCADE CONSTRAINTS;
-DROP TABLE ARTICULOS CASCADE CONSTRAINTS;
-DROP TABLE CATEGORIAS CASCADE CONSTRAINTS;
-DROP TABLE TAGS CASCADE CONSTRAINTS;
-DROP TABLE USUARIOS CASCADE CONSTRAINTS;
+-- =====================================================================
+-- SCRIPT MAESTRO DE INSTALACIÓN - PROYECTO BLOG
+-- ---------------------------------------------------------------------
+-- único archivo para crear o recrear toda la base de datos.
+-- =====================================================================
 
-DROP SEQUENCE usuarios_seq;
-DROP SEQUENCE articulos_seq;
-DROP SEQUENCE comentarios_seq;
-DROP SEQUENCE tags_seq;
-DROP SEQUENCE categorias_seq;
+-- mensajes en la consola para ver el progreso.
+PROMPT *** INICIANDO LA CREACIÓN DEL ESQUEMA DEL BLOG ***
 
+-- ---------------------------------------------------------------------
+-- PASO 1: CREACIÓN DE TABLAS Y SECUENCIAS
+-- ---------------------------------------------------------------------
+-- Se ejecutan los scripts de la carpeta /src/tablas en orden.
+-- ---------------------------------------------------------------------
 
-CREATE TABLE USUARIOS(
-  user_id       NUMBER        CONSTRAINT user_id_pk PRIMARY KEY,
-  user_name     VARCHAR2(50)  CONSTRAINT user_name_nn NOT NULL, 
-  email         VARCHAR2(100) CONSTRAINT email_nn NOT NULL
-);
-
-ALTER TABLE USUARIOS 
-ADD CONSTRAINT email_un UNIQUE(email);
-
-CREATE TABLE ARTICULOS(
-  articulo_id       NUMBER       CONSTRAINT artiuclo_id_pk PRIMARY KEY,
-  user_id           NUMBER       CONSTRAINT a_user_id_nn NOT NULL,--FK
-  titulo            VARCHAR2(50) CONSTRAINT a_titulo_nn NOT NULL,
-  fecha_publicacion DATE DEFAULT SYSDATE, 
-  article_text      CLOB         CONSTRAINT a_text_nn NOT NULL,
-  
-  CONSTRAINT art_user_id_fk FOREIGN KEY (user_id) REFERENCES usuarios(user_id) ON DELETE CASCADE
-);
+PROMPT ... 1. Creando esquemas (tablas y secuencias)...
+@@src/tablas/tabla_01usuario.sql
+@@src/tablas/tabla_02articulos.sql
+@@src/tablas/tabla_03comentarios.sql
+@@src/tablas/tabla_04tags.sql
+@@src/tablas/tabla_05categorias.sql
+@@src/tablas/tabla_07arts_categorias.sql
+@@src/tablas/tabla_06arts_tags.sql
 
 
+-- ---------------------------------------------------------------------
+-- PASO 2: CREACIÓN DE PROCEDIMIENTOS ALMACENADOS
+-- ---------------------------------------------------------------------
+-- Ahora que las tablas existen, se crean los procedimientos.
+-- ---------------------------------------------------------------------
 
-CREATE TABLE COMENTARIOS(
-  comentario_id   NUMBER        CONSTRAINT comentario_id_pk PRIMARY KEY,
-  articulo_id     NUMBER        CONSTRAINT co_art_id_nn NOT NULL,--FK
-  user_id         NUMBER        CONSTRAINT co_user_id_nn NOT NULL,--FK
-  texto_com       CLOB          CONSTRAINT co_texto_nn NOT NULL,
-  --url_profile     VARCHAR2(100) CONSTRAINT co_url_nn NOT NULL,
+PROMPT ... 2. Creando todos los procedimientos almacenados...
 
-  CONSTRAINT co_articulo_id_fk FOREIGN KEY (articulo_id) REFERENCES articulos(articulo_id) ON DELETE CASCADE,
-  CONSTRAINT co_user_id_fk FOREIGN KEY (user_id) REFERENCES usuarios(user_id) ON DELETE CASCADE
-);
+-- Procedimientos Genéricos (GET)
+PROMPT ...... Creando procedimientos GET...
+@@src/procedimientos/proc_spdatostablas.sql
+@@src/procedimientos/proc_spgetarticulosdetalles.sql
+@@src/procedimientos/proc_spgetcomentariosdetalles.sql
 
-CREATE TABLE TAGS(
-  tag_id        NUMBER       CONSTRAINT tag_name_pk PRIMARY KEY,
-  tag_name      VARCHAR2(50) CONSTRAINT t_name_nn NOT NULL,
-  url_tag      VARCHAR2(100) CONSTRAINT t_url_nn NOT NULL
-);
+-- Procedimientos de Inserción (INSERT)
+PROMPT ...... Creando procedimientos INSERT...
+@@src/procedimientos/proc_insertusuario.sql
+@@src/procedimientos/proc_insertarticulos.sql
+@@src/procedimientos/proc_insertcategoria.sql
+@@src/procedimientos/proc_insertcomentario.sql
+@@src/procedimientos/proc_inserttag.sql
+@@src/procedimientos/proc_insertarttag.sql
+@@src/procedimientos/proc_insertartcat.sql
 
-ALTER TABLE TAGS
-ADD CONSTRAINT tag_nm_un UNIQUE(tag_name);
+-- Procedimientos de Actualización (UPDATE)
+PROMPT ...... Creando procedimientos UPDATE...
+@@src/procedimientos/proc_updateusuario.sql
+@@src/procedimientos/proc_updatecategoria.sql
+@@src/procedimientos/proc_updatetags.sql
+@@src/procedimientos/proc_updateartcat.sql
+@@src/procedimientos/proc_updatearttag.sql
 
-CREATE TABLE CATEGORIAS(
-  categoria_id      NUMBER        CONSTRAINT category_id_pk PRIMARY KEY,
-  category_name     VARCHAR2(50)  CONSTRAINT ca_name_nn NOT NULL,
-  url_cat           VARCHAR2(100) CONSTRAINT ca_url_nn NOT NULL
-);
+-- Procedimientos de Eliminación (DELETE)
+PROMPT ...... Creando procedimientos DELETE...
+@@src/procedimientos/proc_deleteusuario.sql
+@@src/procedimientos/proc_deletearticulos.sql
+@@src/procedimientos/proc_deletecategoria.sql
+@@src/procedimientos/proc_deletecomentario.sql
+@@src/procedimientos/proc_deletetags.sql
+@@src/procedimientos/proc_deleteartcat.sql
+@@src/procedimientos/proc_deletearttag.sql
 
-ALTER TABLE CATEGORIAS
-ADD CONSTRAINT categoria_nm_un UNIQUE(category_name);
 
-CREATE TABLE ARTICULO_TAGS(
-  articulo_id    NUMBER CONSTRAINT artag_art_id_nn NOT NULL,
-  tag_id         NUMBER CONSTRAINT artag_tag_id_nn NOT NULL,
-  
-  CONSTRAINT art_tag_pk PRIMARY KEY (articulo_id, tag_id),
-  CONSTRAINT artag_articulo_id_fk FOREIGN KEY (articulo_id) REFERENCES articulos(articulo_id) ON DELETE CASCADE,
-  CONSTRAINT artag_tag_id_fk FOREIGN KEY (tag_id) REFERENCES tags(tag_id) ON DELETE CASCADE
-);
 
-CREATE TABLE ARTICULO_CATEGORIAS(
-  articulo_id       NUMBER CONSTRAINT artcat_art_id_nn NOT NULL,
-  categoria_id      NUMBER CONSTRAINT artcat_cat_id_nn NOT NULL,
-  
-  CONSTRAINT art_cat_pk PRIMARY KEY (articulo_id, categoria_id),
-  CONSTRAINT artcat_articulo_id_fk FOREIGN KEY (articulo_id) REFERENCES articulos(articulo_id) ON DELETE CASCADE, 
-  CONSTRAINT artcat_categoria_id_fk FOREIGN KEY (categoria_id) REFERENCES categorias(categoria_id) ON DELETE CASCADE
-);
-
-CREATE SEQUENCE usuarios_seq
-  START WITH 1
-  INCREMENT BY 1
-  NOCACHE;
-
-CREATE SEQUENCE articulos_seq
-  START WITH 1
-  INCREMENT BY 1
-  NOCACHE;
-
-CREATE SEQUENCE comentarios_seq
-  START WITH 1
-  INCREMENT BY 1
-  NOCACHE;
-
-CREATE SEQUENCE tags_seq
-  START WITH 1
-  INCREMENT BY 1
-  NOCACHE;
-
-CREATE SEQUENCE categorias_seq
-  START WITH 1
-  INCREMENT BY 1
-  NOCACHE;
-
-ALTER TABLE usuarios
-MODIFY user_id DEFAULT usuarios_seq.NEXTVAL;
-ALTER TABLE articulos
-MODIFY articulo_id DEFAULT articulos_seq.NEXTVAL;
-ALTER TABLE comentarios
-MODIFY comentario_id DEFAULT comentarios_seq.NEXTVAL;
-ALTER TABLE tags
-MODIFY tag_id DEFAULT tags_seq.NEXTVAL;
-ALTER TABLE categorias
-MODIFY categoria_id DEFAULT categorias_seq.NEXTVAL;
+PROMPT *** INSTALACIÓN DEL ESQUEMA FINALIZADA CORRECTAMENTE ***
