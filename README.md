@@ -21,4 +21,5 @@ Dentro de la carpeta frontend se maneja toda la lógica dentro del archivo scrip
 Aparte de esos tres archivos, el script de la base de datos se encuentra en el archivo scriptPROYECTO.sql; mientras que los scripts para los procedimientos para insertar, actualizar y eliminar se encuentran dentro de la carpeta “IUD Procedures”. La carpeta “Procedimientos de consultas” contiene los scripts de todos los procedimientos necesarios para la aplicación como buscar artículos o mostrar detalles.
 
 
+
 lalo
