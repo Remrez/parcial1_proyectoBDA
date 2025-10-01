@@ -74,6 +74,32 @@ def seed_data(cur):
         (9, 5, 'Nunca había leído algo tan completo sobre el tema, felicidades.'),
         (10, 8, 'Muy informativo, definitivamente lo recomendaré a mis compañeros.')
     ]
+
+    articulo_categorias = [
+        (1, 3), (1, 1),
+        (2, 2), (2, 4),
+        (3, 3), (3, 6),
+        (4, 1), (4, 7),
+        (5, 3), (5, 4),
+        (6, 2), (6, 7),
+        (7, 3), (7, 8),
+        (8, 5), (8, 1),
+        (9, 3), (9, 2),
+        (10, 1), (10, 9)
+    ]
+
+    articulo_tags = [
+        (1, 3), (1, 1),
+        (2, 2), (2, 7),
+        (3, 3), (3, 6),
+        (4, 3), (4, 1),
+        (5, 1), (5, 6),
+        (6, 2), (6, 7),
+        (7, 3), (7, 10),
+        (8, 5), (8, 7),
+        (9, 3), (9, 1),
+        (10, 1), (10, 6)
+    ]
     
     try:
         for nombre, correo in usuarios:
@@ -95,6 +121,14 @@ def seed_data(cur):
         for artId, usId, texto in comentarios:
             cur.callproc('INSERT_COMENTARIO', (artId, usId, texto))
         print(f"{len(comentarios)} comentarios insertados.")
+
+        for artId, catId in articulo_categorias:
+            cur.callproc('INSERT_ART_CAT', (artId, catId))
+        print(f"{len(articulo_categorias)} relaciones artículo-categoría insertadas.")
+
+        for artId, tagId in articulo_tags:
+            cur.callproc('INSERT_ART_TAG', (artId, tagId))
+        print(f"{len(articulo_tags)} relaciones artículo-tag insertadas.")
 
     except oracledb.Error as err:
         print('Error durante la inserción:', err)
