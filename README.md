@@ -13,3 +13,5 @@ El archivo app.py es una API Flask que contiene los endpoints de la aplicación.
 El archivo db.py crea la conexión a la base de datos de Oracle y permite gestionar dicha conexión.
 Dentro de la carpeta frontend se maneja toda la lógica dentro del archivo script.js; dentro de este archivo se define la URL de la API, así como mostrar mensajes y hacer peticiones al backend. Tiene funciones para mostrar, agregar y eliminar datos.
 Aparte de esos tres archivos, el script de la base de datos se encuentra en el archivo scriptPROYECTO.sql; mientras que los scripts para los procedimientos para insertar, actualizar y eliminar se encuentran dentro de la carpeta “IUD Procedures”. La carpeta “Procedimientos de consultas” contiene los scripts de todos los procedimientos necesarios para la aplicación como buscar artículos o mostrar detalles.
+
+lalo
