@@ -7,7 +7,7 @@ IS
     opSql VARCHAR(255);
 BEGIN
     opSql := 'UPDATE categorias SET category_name = :category_name, url_cat = :purl_cat WHERE category_name = :or_categoria_name';
-    EXECUTE IMMEDIATE opSql USING purl, category_name, or_category_name;
+    EXECUTE IMMEDIATE opSql USING category_name, purl, or_category_name;
     COMMIT;
 END;
 /
