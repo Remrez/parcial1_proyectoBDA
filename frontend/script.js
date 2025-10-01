@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const originalName = document.getElementById('original-name').value;
                         await apiCall(`/categorias/${encodeURIComponent(originalName)}`, {
                             method: 'PUT',
-                            body: JSON.stringify({ category_name: data.category_name })
+                            body: JSON.stringify({ category_name: data.category_name, url_cat: data.url_cat})
                         });
                     } else {
                         await apiCall('/categorias', { method: 'POST', body: JSON.stringify(data) });
@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const originalName = document.getElementById('original-tag-name').value;
                         await apiCall(`/tags/${encodeURIComponent(originalName)}`, {
                             method: 'PUT',
-                            body: JSON.stringify({ tag_name: data.tag_name })
+                            body: JSON.stringify({ tag_name: data.tag_name, url_tag: data.url_tag })
                         });
                     } else {
                         await apiCall('/tags', { method: 'POST', body: JSON.stringify(data) });

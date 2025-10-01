@@ -236,7 +236,7 @@ def update_categoria(category_name):
     if not conn: return jsonify({"error": "Error de conexión"}), 500
     try:
         with conn.cursor() as cur:
-            cur.callproc('UPDATE_CATEGORIA', [category_name, data['category_name']])
+            cur.callproc('UPDATE_CATEGORIA', [category_name, data['category_name'], data['url_cat']])
             conn.commit()
             return jsonify({"message": "Categoría actualizada correctamente"})
     except oracledb.Error as e:
@@ -330,7 +330,7 @@ def update_tag(tag_name):
     if not conn: return jsonify({"error": "Error de conexión"}), 500
     try:
         with conn.cursor() as cur:
-            cur.callproc('UPDATE_TAG', [tag_name, data['tag_name']])
+            cur.callproc('UPDATE_TAG', [tag_name, data['tag_name'], data['url_tag']])
             conn.commit()
             return jsonify({"message": "Tag actualizado correctamente"})
     except oracledb.Error as e:
