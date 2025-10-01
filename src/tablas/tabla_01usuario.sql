@@ -1,0 +1,18 @@
+DROP TABLE USUARIOS CASCADE CONSTRAINTS;
+DROP SEQUENCE usuarios_seq;
+
+CREATE TABLE USUARIOS(
+    user_id       NUMBER        CONSTRAINT user_id_pk PRIMARY KEY,
+    user_name     VARCHAR2(50)  CONSTRAINT user_name_nn NOT NULL, 
+    email         VARCHAR2(100) CONSTRAINT email_nn NOT NULL
+);
+ALTER TABLE USUARIOS 
+ADD CONSTRAINT email_un UNIQUE(email);
+
+CREATE SEQUENCE usuarios_seq
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE;
+ALTER TABLE usuarios
+MODIFY user_id DEFAULT usuarios_seq.NEXTVAL;
+/
