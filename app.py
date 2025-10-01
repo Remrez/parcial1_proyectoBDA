@@ -267,7 +267,7 @@ def create_comentario():
     if not conn: return jsonify({"error": "Error de conexión"}), 500
     try:
         with conn.cursor() as cur:
-            cur.callproc('INSERT_COMENTARIO', [0, data['user_id'], data['texto_com']])
+            cur.callproc('INSERT_COMENTARIO', [data['articulo_id'], 0, data['texto_com']])
             conn.commit()
             return jsonify({"message": "Comentario creado correctamente"}), 201
     except oracledb.Error as e:
