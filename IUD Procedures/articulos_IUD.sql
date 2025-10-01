@@ -6,7 +6,7 @@ CREATE OR REPLACE PROCEDURE insert_articulo(
 IS
     opSql VARCHAR(255);
 BEGIN
-    opSql := 'INSERT INTO articulos(user_id, titulo, article_text) VALUES (:user_id, :titulo, :fecha_publicacion, :article_text)';
+    opSql := 'INSERT INTO articulos(user_id, titulo, article_text) VALUES (:user_id, :titulo, :article_text)';
     EXECUTE IMMEDIATE opSql USING user_id, titulo, article_text;
     COMMIT;
 END;
