@@ -170,7 +170,7 @@ def create_articulo():
     if not conn: return jsonify({"error": "Error de conexión"}), 500
     try:
         with conn.cursor() as cur:
-            cur.callproc('INSERT_ARTICULO', [data['user_id'], data['titulo'], data['article_text']])
+            cur.callproc('INSERT_ARTICULO', [0, data['titulo'], data['article_text']])
             conn.commit()
             return jsonify({"message": "Artículo creado correctamente"}), 201
     except oracledb.Error as e:
@@ -267,7 +267,7 @@ def create_comentario():
     if not conn: return jsonify({"error": "Error de conexión"}), 500
     try:
         with conn.cursor() as cur:
-            cur.callproc('INSERT_COMENTARIO', [data['articulo_id'], data['user_id'], data['texto_com']])
+            cur.callproc('INSERT_COMENTARIO', [0, data['user_id'], data['texto_com']])
             conn.commit()
             return jsonify({"message": "Comentario creado correctamente"}), 201
     except oracledb.Error as e:
