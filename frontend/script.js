@@ -50,7 +50,13 @@ async function apiCall(endpoint, options = {}) {
             throw new Error(errorData.error || 'Error en la petición');
         }
         
-        return await response.json();
+        // Solo intenta parsear JSON si hay contenido
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            return await response.json();
+        }
+        return {}; // Devuelve un objeto vacío si no hay JSON
+
     } catch (error) {
         console.error('Error en API call:', error);
         showMessage(error.message, 'error');
@@ -69,12 +75,12 @@ async function loadRealData() {
             
             articulos.forEach(articulo => {
                 const tr = document.createElement('tr');
+                // --- CAMBIO: Se eliminó el botón de Editar ---
                 tr.innerHTML = `
                     <td>${articulo.articulo_id}</td>
                     <td>${articulo.user_name} (ID: ${articulo.user_id})</td>
                     <td>${articulo.titulo}</td>
                     <td class="action-buttons">
-                        <button class="btn btn-primary btn-sm" onclick="editArticle(${articulo.articulo_id}, ${articulo.user_id}, '${articulo.titulo.replace(/'/g, "\\'")}', '${articulo.article_text.replace(/'/g, "\\'")}')">Editar</button>
                         <button class="btn btn-danger btn-sm" onclick="deleteArticle(${articulo.articulo_id})">Eliminar</button>
                     </td>
                 `;
@@ -82,7 +88,7 @@ async function loadRealData() {
             });
         }
         
-        // Cargar categorías
+        // Cargar categorías (sin cambios)
         if (document.getElementById('categories-table')) {
             const categorias = await apiCall('/categorias');
             const tbody = document.querySelector('#categories-table tbody');
@@ -110,13 +116,13 @@ async function loadRealData() {
             
             comentarios.forEach(comentario => {
                 const tr = document.createElement('tr');
+                // --- CAMBIO: Se eliminó el botón de Editar ---
                 tr.innerHTML = `
                     <td>${comentario.comentario_id}</td>
                     <td>${comentario.titulo_articulo} (ID: ${comentario.articulo_id})</td>
                     <td>${comentario.user_name} (ID: ${comentario.user_id})</td>
                     <td>${comentario.texto_com}</td>
                     <td class="action-buttons">
-                        <button class="btn btn-primary btn-sm" onclick="editComment(${comentario.comentario_id}, ${comentario.articulo_id}, ${comentario.user_id}, '${comentario.texto_com.replace(/'/g, "\\'")}')">Editar</button>
                         <button class="btn btn-danger btn-sm" onclick="deleteComment(${comentario.comentario_id})">Eliminar</button>
                     </td>
                 `;
@@ -124,7 +130,7 @@ async function loadRealData() {
             });
         }
         
-        // Cargar tags
+        // Cargar tags (sin cambios)
         if (document.getElementById('tags-table')) {
             const tags = await apiCall('/tags');
             const tbody = document.querySelector('#tags-table tbody');
@@ -144,7 +150,7 @@ async function loadRealData() {
             });
         }
         
-        // Cargar usuarios
+        // Cargar usuarios (sin cambios)
         if (document.getElementById('users-table')) {
             const usuarios = await apiCall('/usuarios');
             const tbody = document.querySelector('#users-table tbody');
@@ -169,17 +175,7 @@ async function loadRealData() {
     }
 }
 
-// Funciones para Artículos
-function editArticle(id, userId, title, text) {
-    document.getElementById('article-id').value = id;
-    document.getElementById('user-id').value = userId;
-    document.getElementById('titulo').value = title;
-    document.getElementById('article-text').value = text;
-    document.getElementById('form-title').textContent = 'Editar Artículo';
-    document.getElementById('update-title').checked = true;
-    document.getElementById('update-text').checked = true;
-}
-
+// --- CAMBIO: Se eliminó la función editArticle ---
 async function deleteArticle(id) {
     if (confirm('¿Estás seguro de que deseas eliminar este artículo?')) {
         try {
@@ -192,7 +188,7 @@ async function deleteArticle(id) {
     }
 }
 
-// Funciones para Categorías
+// Funciones para Categorías (sin cambios)
 function editCategory(name, url) {
     document.getElementById('original-name').value = name;
     document.getElementById('category-name').value = name;
@@ -206,34 +202,22 @@ async function deleteCategory(name) {
             await apiCall(`/categorias/${encodeURIComponent(name)}`, { method: 'DELETE' });
             showMessage('Categoría eliminada correctamente', 'success');
             loadRealData();
-        } catch (error) {
-            // El error ya se maneja en apiCall
-        }
+        } catch (error) {}
     }
 }
 
-// Funciones para Comentarios
-function editComment(id, articleId, userId, text) {
-    document.getElementById('comment-id').value = id;
-    document.getElementById('article-id-comment').value = articleId;
-    document.getElementById('user-id-comment').value = userId;
-    document.getElementById('texto-com').value = text;
-    document.getElementById('form-title').textContent = 'Editar Comentario';
-}
-
+// --- CAMBIO: Se eliminó la función editComment ---
 async function deleteComment(id) {
     if (confirm('¿Estás seguro de que deseas eliminar este comentario?')) {
         try {
             await apiCall(`/comentarios/${id}`, { method: 'DELETE' });
             showMessage('Comentario eliminado correctamente', 'success');
             loadRealData();
-        } catch (error) {
-            // El error ya se maneja en apiCall
-        }
+        } catch (error) {}
     }
 }
 
-// Funciones para Tags
+// Funciones para Tags (sin cambios)
 function editTag(name, url) {
     document.getElementById('original-tag-name').value = name;
     document.getElementById('tag-name').value = name;
@@ -247,13 +231,11 @@ async function deleteTag(name) {
             await apiCall(`/tags/${encodeURIComponent(name)}`, { method: 'DELETE' });
             showMessage('Tag eliminado correctamente', 'success');
             loadRealData();
-        } catch (error) {
-            // El error ya se maneja en apiCall
-        }
+        } catch (error) {}
     }
 }
 
-// Funciones para Usuarios
+// Funciones para Usuarios (sin cambios)
 function editUser(email, name, newEmail) {
     document.getElementById('original-email').value = email;
     document.getElementById('user-name').value = name;
@@ -269,18 +251,14 @@ async function deleteUser(email) {
             await apiCall(`/usuarios/${encodeURIComponent(email)}`, { method: 'DELETE' });
             showMessage('Usuario eliminado correctamente', 'success');
             loadRealData();
-        } catch (error) {
-            // El error ya se maneja en apiCall
-        }
+        } catch (error) {}
     }
 }
 
 // Configuración de formularios
 document.addEventListener('DOMContentLoaded', function() {
-    // Cargar datos reales
     loadRealData();
     
-    // Configurar botones de cancelar
     const cancelButtons = document.querySelectorAll('#cancel-edit');
     cancelButtons.forEach(button => {
         button.addEventListener('click', function() {
@@ -293,7 +271,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Configurar envío de formularios
     const forms = document.querySelectorAll('form');
     forms.forEach(form => {
         form.addEventListener('submit', async function(e) {
@@ -304,20 +281,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             try {
                 if (form.id === 'article-form') {
+                    // --- CAMBIO: user_id se establece a 0 en la inserción ---
                     const data = {
-                        user_id: parseInt(document.getElementById('user-id').value),
+                        user_id: 0, // ID de Admin
                         titulo: document.getElementById('titulo').value,
                         article_text: document.getElementById('article-text').value
                     };
                     
+                    // La lógica de 'isEdit' ya no es necesaria aquí, pero la dejamos por si se reactiva en el futuro
                     if (isEdit) {
-                        data.titulo_bool = document.getElementById('update-title').checked ? 1 : 0;
-                        data.text_bool = document.getElementById('update-text').checked ? 1 : 0;
-                        const articleId = document.getElementById('article-id').value;
-                        await apiCall(`/articulos/${articleId}`, {
-                            method: 'PUT',
-                            body: JSON.stringify(data)
-                        });
+                        // Esta parte ya no se usará
                     } else {
                         await apiCall('/articulos', {
                             method: 'POST',
@@ -326,11 +299,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 else if (form.id === 'category-form') {
+                    // Lógica para categorías sin cambios
                     const data = {
                         category_name: document.getElementById('category-name').value,
                         url_cat: document.getElementById('url-cat').value
                     };
-                    
                     if (isEdit) {
                         const originalName = document.getElementById('original-name').value;
                         await apiCall(`/categorias/${encodeURIComponent(originalName)}`, {
@@ -338,25 +311,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             body: JSON.stringify({ category_name: data.category_name })
                         });
                     } else {
-                        await apiCall('/categorias', {
-                            method: 'POST',
-                            body: JSON.stringify(data)
-                        });
+                        await apiCall('/categorias', { method: 'POST', body: JSON.stringify(data) });
                     }
                 }
                 else if (form.id === 'comment-form') {
+                    // --- CAMBIO: user_id se establece a 0 en la inserción ---
                     const data = {
                         articulo_id: parseInt(document.getElementById('article-id-comment').value),
-                        user_id: parseInt(document.getElementById('user-id-comment').value),
+                        user_id: 0, // ID de Admin
                         texto_com: document.getElementById('texto-com').value
                     };
                     
                     if (isEdit) {
-                        const commentId = document.getElementById('comment-id').value;
-                        await apiCall(`/comentarios/${commentId}`, {
-                            method: 'PUT',
-                            body: JSON.stringify({ texto_com: data.texto_com })
-                        });
+                        // Esta parte ya no se usará
                     } else {
                         await apiCall('/comentarios', {
                             method: 'POST',
@@ -365,11 +332,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 else if (form.id === 'tag-form') {
+                    // Lógica para tags sin cambios
                     const data = {
                         tag_name: document.getElementById('tag-name').value,
                         url_tag: document.getElementById('url-tag').value
                     };
-                    
                     if (isEdit) {
                         const originalName = document.getElementById('original-tag-name').value;
                         await apiCall(`/tags/${encodeURIComponent(originalName)}`, {
@@ -377,18 +344,15 @@ document.addEventListener('DOMContentLoaded', function() {
                             body: JSON.stringify({ tag_name: data.tag_name })
                         });
                     } else {
-                        await apiCall('/tags', {
-                            method: 'POST',
-                            body: JSON.stringify(data)
-                        });
+                        await apiCall('/tags', { method: 'POST', body: JSON.stringify(data) });
                     }
                 }
                 else if (form.id === 'user-form') {
+                    // Lógica para usuarios sin cambios
                     const data = {
                         user_name: document.getElementById('user-name').value,
                         email: document.getElementById('user-email').value
                     };
-                    
                     if (isEdit) {
                         data.name_bool = document.getElementById('update-name').checked ? 1 : 0;
                         data.email_bool = document.getElementById('update-email').checked ? 1 : 0;
@@ -398,23 +362,15 @@ document.addEventListener('DOMContentLoaded', function() {
                             body: JSON.stringify(data)
                         });
                     } else {
-                        await apiCall('/usuarios', {
-                            method: 'POST',
-                            body: JSON.stringify(data)
-                        });
+                        await apiCall('/usuarios', { method: 'POST', body: JSON.stringify(data) });
                     }
                 }
                 
                 showMessage(isEdit ? 'Registro actualizado correctamente' : 'Registro creado correctamente', 'success');
-                
-                // Limpiar formulario
                 this.reset();
-                
                 if (formTitle) {
                     formTitle.textContent = formTitle.textContent.replace('Editar', 'Agregar Nuevo');
                 }
-                
-                // Recargar datos
                 loadRealData();
                 
             } catch (error) {

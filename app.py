@@ -1,27 +1,120 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import oracledb
-# --- 1. Importamos las funciones de nuestro nuevo módulo db ---
-from db import get_db_connection, pool
+from db import get_db_connection, pool # Importamos desde nuestro módulo db
 
 app = Flask(__name__)
 CORS(app)
 
-# --- Endpoints para Usuarios ---
-# La lógica de los endpoints no cambia, solo que ahora dependen de "db.py"
+# --- FUNCIÓN AUXILIAR PARA LLAMAR AL PROCEDIMIENTO GENÉRICO ---
+def _call_sp_get_data(table_name):
+    # Función genérica que llama al procedimiento sp_datos_tablas
+    # y devuelve las filas obtenidas.
+    
+    conn = get_db_connection()
+    if not conn:
+        raise Exception("Error de conexión a la base de datos")
+    
+    try:
+        with conn.cursor() as cur:
+            out_cursor = cur.var(oracledb.DB_TYPE_CURSOR)
+            cur.callproc('sp_datos_tablas', [table_name, out_cursor])
+            result_cursor = out_cursor.getvalue()
+            return result_cursor.fetchall()
+    finally:
+        if conn:
+            pool.release(conn)
+
+# --- Endpoints para Usuarios (Usa el procedimiento genérico) ---
 @app.route('/api/usuarios', methods=['GET'])
 def get_usuarios():
+    try:
+        rows = _call_sp_get_data('usuarios')
+        usuarios = [{'user_id': r[0], 'user_name': r[1], 'email': r[2]} for r in rows]
+        return jsonify(usuarios)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# --- Endpoints para Artículos (AHORA USA SU PROCEDIMIENTO ESPECÍFICO) ---
+@app.route('/api/articulos', methods=['GET'])
+def get_articulos():
     conn = get_db_connection()
     if not conn: return jsonify({"error": "Error de conexión"}), 500
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT user_id, user_name, email FROM usuarios")
-            rows = cur.fetchall()
-            return jsonify([{'user_id': r[0], 'user_name': r[1], 'email': r[2]} for r in rows])
+            # Llama al nuevo procedimiento específico para artículos
+            out_cursor = cur.var(oracledb.DB_TYPE_CURSOR)
+            cur.callproc('sp_get_articulos_detalle', [out_cursor])
+            
+            # Obtiene el cursor de resultado y lee las filas
+            result_cursor = out_cursor.getvalue()
+            rows = result_cursor.fetchall()
+            
+            articulos = []
+            for row in rows:
+                article_text_lob = row[3]
+                article_text_str = article_text_lob.read() if article_text_lob else ""
+                articulos.append({
+                    'articulo_id': row[0], 'user_id': row[1], 'titulo': row[2],
+                    'article_text': article_text_str, 'user_name': row[4]
+                })
+            return jsonify(articulos)
     except oracledb.Error as e:
         return jsonify({"error": str(e)}), 500
     finally:
         if conn: pool.release(conn)
+
+# --- Endpoints para Categorías (Usa el procedimiento genérico) ---
+@app.route('/api/categorias', methods=['GET'])
+def get_categorias():
+    try:
+        rows = _call_sp_get_data('categorias')
+        categorias = [{'category_name': r[1], 'url_cat': r[2]} for r in rows]
+        return jsonify(categorias)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# --- Endpoints para Comentarios (AHORA USA SU PROCEDIMIENTO ESPECÍFICO) ---
+@app.route('/api/comentarios', methods=['GET'])
+def get_comentarios():
+    conn = get_db_connection()
+    if not conn: return jsonify({"error": "Error de conexión"}), 500
+    try:
+        with conn.cursor() as cur:
+            # Llama al nuevo procedimiento específico para comentarios
+            out_cursor = cur.var(oracledb.DB_TYPE_CURSOR)
+            cur.callproc('sp_get_comentarios_detalle', [out_cursor])
+
+            # Obtiene el cursor de resultado y lee las filas
+            result_cursor = out_cursor.getvalue()
+            rows = result_cursor.fetchall()
+
+            comentarios = []
+            for row in rows:
+                texto_com_lob = row[3]
+                texto_com_str = texto_com_lob.read() if texto_com_lob else ""
+                comentarios.append({
+                    'comentario_id': row[0], 'articulo_id': row[1], 'user_id': row[2],
+                    'texto_com': texto_com_str, 'titulo_articulo': row[4], 'user_name': row[5]
+                })
+            return jsonify(comentarios)
+    except oracledb.Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: pool.release(conn)
+
+# --- Endpoints para Tags (Usa el procedimiento genérico) ---
+@app.route('/api/tags', methods=['GET'])
+def get_tags():
+    try:
+        rows = _call_sp_get_data('tags')
+        tags = [{'tag_name': r[1], 'url_tag': r[2]} for r in rows]
+        return jsonify(tags)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# --- EL RESTO DE ENDPOINTS (POST, PUT, DELETE) NO CAMBIAN ---
+# (El código es el mismo que ya tenías)
 
 @app.route('/api/usuarios', methods=['POST'])
 def create_usuario():
@@ -70,37 +163,6 @@ def delete_usuario(email):
     finally:
         if conn: pool.release(conn)
 
-# --- Endpoints para Artículos ---
-@app.route('/api/articulos', methods=['GET'])
-def get_articulos():
-    conn = get_db_connection()
-    if not conn: return jsonify({"error": "Error de conexión"}), 500
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT a.articulo_id, a.user_id, a.titulo, a.article_text, u.user_name
-                FROM articulos a
-                JOIN usuarios u ON a.user_id = u.user_id
-            """)
-            rows = cur.fetchall()
-            articulos = []
-            for row in rows:
-                article_text_lob = row[3]
-                article_text_str = article_text_lob.read() if article_text_lob else ""
-                articulos.append({
-                    'articulo_id': row[0], 'user_id': row[1], 'titulo': row[2],
-                    'article_text': article_text_str, 'user_name': row[4]
-                })
-            return jsonify(articulos)
-    except oracledb.Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn: pool.release(conn)
-
-# ... (Aquí irían todos los demás endpoints de Artículos, Categorías, Comentarios y Tags,
-#      que se quedan exactamente igual que en el archivo anterior) ...
-
-# --- (Resto de tus endpoints completos) ---
 @app.route('/api/articulos', methods=['POST'])
 def create_articulo():
     data = request.json
@@ -147,21 +209,6 @@ def delete_articulo(articulo_id):
             return jsonify({"message": "Artículo eliminado correctamente"})
     except oracledb.Error as e:
         conn.rollback()
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn: pool.release(conn)
-
-# --- Endpoints para Categorías ---
-@app.route('/api/categorias', methods=['GET'])
-def get_categorias():
-    conn = get_db_connection()
-    if not conn: return jsonify({"error": "Error de conexión"}), 500
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT category_name, url_cat FROM categorias")
-            rows = cur.fetchall()
-            return jsonify([{'category_name': r[0], 'url_cat': r[1]} for r in rows])
-    except oracledb.Error as e:
         return jsonify({"error": str(e)}), 500
     finally:
         if conn: pool.release(conn)
@@ -213,35 +260,6 @@ def delete_categoria(category_name):
     finally:
         if conn: pool.release(conn)
 
-# --- Endpoints para Comentarios ---
-@app.route('/api/comentarios', methods=['GET'])
-def get_comentarios():
-    conn = get_db_connection()
-    if not conn: return jsonify({"error": "Error de conexión"}), 500
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT c.comentario_id, c.articulo_id, c.user_id, c.texto_com,
-                       a.titulo, u.user_name
-                FROM comentarios c
-                JOIN articulos a ON c.articulo_id = a.articulo_id
-                JOIN usuarios u ON c.user_id = u.user_id
-            """)
-            rows = cur.fetchall()
-            comentarios = []
-            for row in rows:
-                texto_com_lob = row[3]
-                texto_com_str = texto_com_lob.read() if texto_com_lob else ""
-                comentarios.append({
-                    'comentario_id': row[0], 'articulo_id': row[1], 'user_id': row[2],
-                    'texto_com': texto_com_str, 'titulo_articulo': row[4], 'user_name': row[5]
-                })
-            return jsonify(comentarios)
-    except oracledb.Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn: pool.release(conn)
-
 @app.route('/api/comentarios', methods=['POST'])
 def create_comentario():
     data = request.json
@@ -285,21 +303,6 @@ def delete_comentario(comentario_id):
             return jsonify({"message": "Comentario eliminado correctamente"})
     except oracledb.Error as e:
         conn.rollback()
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn: pool.release(conn)
-
-# --- Endpoints para Tags ---
-@app.route('/api/tags', methods=['GET'])
-def get_tags():
-    conn = get_db_connection()
-    if not conn: return jsonify({"error": "Error de conexión"}), 500
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT tag_name, url_tag FROM tags")
-            rows = cur.fetchall()
-            return jsonify([{'tag_name': r[0], 'url_tag': r[1]} for r in rows])
-    except oracledb.Error as e:
         return jsonify({"error": str(e)}), 500
     finally:
         if conn: pool.release(conn)
@@ -351,6 +354,7 @@ def delete_tag(tag_name):
     finally:
         if conn: pool.release(conn)
 
+
 if __name__ == '__main__':
-    # 2. El servidor ahora se corre desde app.py
     app.run(debug=True, port=5000)
+
